@@ -30,6 +30,7 @@ import {
 import { useRef, useState, useEffect } from 'react';
 import { AddIcon, DeleteIcon, AttachmentIcon } from '@chakra-ui/icons';
 import CreateObservationModal, { Observation } from '../../components/CreateObservationModal';
+import { useNavigate } from 'react-router-dom';
 
 interface ButtonsColumnProps {
     currentTime: number;
@@ -70,6 +71,7 @@ export default function ButtonsColumn({
     onGoToTime,
     initialObservations = []
 }: ButtonsColumnProps) {
+    const navigate = useNavigate();
     const { isOpen: isEndSessionModalOpen, onOpen: onEndSessionModalOpen, onClose: onEndSessionModalClose } = useDisclosure();
     const { isOpen: isAddObeservationModalOpen, onOpen: onAddObeservationModalOpen, onClose: onAddObeservationModalClose } = useDisclosure();
 
@@ -340,9 +342,45 @@ export default function ButtonsColumn({
         URL.revokeObjectURL(url);
     };
 
-    const handleEndSession = () => {
-        exportToCSV();
-        onEndSessionModalClose();
+    const handleEndSession = async () => {
+        try {
+            // Export CSV
+            exportToCSV();
+            
+            // Close the modal
+            onEndSessionModalClose();
+            
+            // Clear all state
+            setObservations([]);
+            setObservationLogs([]);
+            setActiveObservations({});
+            setHours("00");
+            setMinutes("00");
+            setSeconds("00");
+            
+            // Show success message
+            toast({
+                title: 'Session Ended',
+                description: 'Your session data has been exported and the session has ended.',
+                status: 'success',
+                duration: 2000,
+                isClosable: true,
+            });
+
+            // Navigate to home page after a short delay to allow the toast to be visible
+            setTimeout(() => {
+                navigate('/', { replace: true });
+                window.location.reload(); // Force reload to refresh data
+            }, 1000);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to end session. Please try again.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        }
     };
 
     return (
