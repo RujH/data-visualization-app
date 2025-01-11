@@ -3,6 +3,8 @@ import ButtonsColumn from './ButtonsColumn';
 import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { Button, Box, Container, Flex } from '@chakra-ui/react';
 import { useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Observation } from '../../components/CreateObservationModal';
 
 export interface VideoControl {
   currentTime: number;
@@ -12,6 +14,9 @@ export interface VideoControl {
 }
 
 export default function DataPlatformPage() {
+  const location = useLocation();
+  const initialObservations = (location.state?.observations as Observation[]) || [];
+  
   const [videoControls, setVideoControls] = useState<VideoControl[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -97,6 +102,7 @@ export default function DataPlatformPage() {
           onPlayPause={handlePlayPause}
           onSkip={handleSkip}
           onGoToTime={handleGoToTime}
+          initialObservations={initialObservations}
         />
       </Flex>
 
