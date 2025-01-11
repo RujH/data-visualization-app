@@ -1,19 +1,14 @@
-import { Box, Stack, Text, Flex, Button } from '@chakra-ui/react'
-import type { UploadFile, UploadProps } from 'antd';
-import { Upload, Image} from 'antd';
+import { Box, Stack, Text, Flex, Button, SimpleGrid } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import React, {useState,  useEffect, useRef } from 'react';
-import tempExamplePic from '../assets/tempExamplePic.png';
-
-import { 
-  ChevronRightIcon
-} from '@chakra-ui/icons'
-
+import React, {useState,  useEffect, useRef,  } from 'react';
+import { ChevronRightIcon } from '@chakra-ui/icons';
+import { useFileContext } from '../FileContext';
 
 export default function HomePage() {
   
-  const [files, setFiles] = useState<FileList>();
+  const { files, setFiles } = useFileContext(); 
   const inputRef = useRef<HTMLInputElement>(null);
+  const [inputError, setInputError] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,8 +21,9 @@ export default function HomePage() {
   const handleFolderSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      console.log('Files:', files);
+      console.log("homepage",files)
       setFiles(files)
+      setInputError(false);
     }
   };
 
@@ -37,7 +33,9 @@ export default function HomePage() {
     if (files) {
       navigate('/SettingPage', { state: { files } });
     } else {
+      
       console.error("No files selected.");
+      setInputError(true);
     }
   };
 
@@ -50,46 +48,52 @@ export default function HomePage() {
       h="100vh"             
       p={4}
     >
-      <Box alignContent="center" p={4}>
-        <Text mr={4} fontWeight="bold"> Upload Folder</Text>
-        <Flex align="center">
-          <div className="form-group">
-            <label htmlFor="sessionInput" className="form-label">Session Data: </label>
-            <input
-              ref={inputRef}
-              type="file"
-              onChange={handleFolderSelection}
-              required
-            />
-          </div>
-        </Flex>
+      <div className='backgroundShap'>
+        <div className="rounded-box">
 
-        <Flex align={"center"} pt={10}>
-          <Image
-            width={200}
-            src={tempExamplePic}
-            alt={`Folder Structure`}
-          >
-          </Image>
+        <SimpleGrid minChildWidth="sm" gap="40px">  
+          <Text fontWeight="bold"> Upload Folder</Text>
+          <Flex align="center">
+            <div className="form-group">
+              <label htmlFor="sessionInput" className="form-label">Session Data: </label>
+              <input
+                id="file-picker"
+                ref={inputRef}
+                type="file"
+                onChange={handleFolderSelection}
+                required
+                
+                style={inputError ? {
+                  borderColor: 'red',  
+                  borderWidth: '2px',  
+                  borderStyle: 'solid',  
+                  borderRadius: '8px', 
+                  padding: '8px',  
+                  outline: 'none',  
+                  marginBottom: '10px'  
+                } : {}}
+              />
+            </div>
+          </Flex>
+        </SimpleGrid>
+        </div>
 
-        </Flex>
-
-         {/* footer */}
-         <Box
+        {/* footer */}
+        <Box
           position="fixed"
           bottom={4}
           left={4}
           width="100%"
-          p={5} // Padding for spacing; adjust as needed
-          
+          p={5} 
         >
-          <Flex  justifyContent="flex-end" alignItems="center" align={"right"} pt={10}>
+          <Flex justifyContent="flex-end" alignItems="center" align={"right"} pt={10}>
             <Button rightIcon={<ChevronRightIcon />} mr={5} colorScheme='green' onClick={() => handleNextButtonClick()}>Next</Button>
           </Flex>
-          
         </Box>
 
-      </Box>
+        </div>
+
+      
     </Stack> 
   )
 }

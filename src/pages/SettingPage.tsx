@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/icons'
 import { useLocation, useNavigate } from 'react-router-dom';
 import CreateObservationModal from '../components/CreateObservationModal';
-
+import './SettingPage.css'
 
 interface dataToChartMap {
   fileName : string,
@@ -70,77 +70,80 @@ export default function SettingPage() {
 
   return (
 
-    <Container maxW="container.lg" >
+    <Container maxW="container.lg">
+
       <Stack
-        spacing={10}           // Space between each child
-        align="left"       // Center items horizontally
-        justify="center"     // Center items vertically within the container
-        h="50vh"             // Full viewport height
+        spacing={10}           
+        align="left"       
+        h="50vh"             
       
       >
         {/* Select graph section */}
-        <Box >
-          <Text mr={4} mb={5} fontWeight="bold"> Select Graph:</Text>
-          
-          {files && files.length > 0 ? 
-            (
-              <ul>
-                {Array.from(files).map((file, index) => (
-                  
-                  file.webkitRelativePath.includes('Sensor') && !file.name.startsWith('.')? (
-                    
-                    <Flex m={4} pr={4} alignItems={"center"} >
-                      <Text>{file.name}</Text>
-                      <Menu>
-                        <MenuButton marginLeft={5} rightIcon={<ChevronDownIcon />} as={Button} >
-                          {dropdownMenu.length>0 && dropdownMenu.find(item => item.id === index)? dropdownMenu.find(item => item.id === index)?.graphName : "Graph Type"}
-                        </MenuButton>
-                        <MenuList>
-                          <MenuItem onClick={()=>handleDropdownMenu(file.name, "Line Graph", index)}>Line Graph</MenuItem>
-                          <MenuItem onClick={()=>handleDropdownMenu(file.name, "Bar Graph", index)}>Bar Graph</MenuItem>
-                        </MenuList>
-                      </Menu>
-                    </Flex>
-                  ):(
-                    <div></div>
-                  )
-
-                ))}
-              </ul>
-            ) : (
-              <p>No files passed.</p>
-            )
-          }
-            
-
-        </Box>
-        {/* Select observation button section */}
-        <Box>
-          <Text mr={4} mb={5} fontWeight="bold"> Select Oservation Buttons: </Text>
-          <Button leftIcon={<AddIcon />} onClick={onOpen}>Add Oservation</Button>
-          <CreateObservationModal initialRef={initialRef} finalRef= {finalRef} isOpen={isOpen} onClose={onClose}/>
+        <Box className="rounded-rectangle-box" p={5}>
+          <Text mb={4} fontWeight="bold">Select Graph:</Text>
+          {files && files.length > 0 ? (
+            <Stack spacing={4}>
+              {Array.from(files).map((file, index) =>
+                file.webkitRelativePath.includes("Sensor") && !file.name.startsWith(".") ? (
+                  <Flex key={index} align="center" justify="space-between">
+                    <Text>{file.name}</Text>
+                    <Menu>
+                      <MenuButton
+                        as={Button}
+                        rightIcon={<ChevronDownIcon />}
+                      >
+                        {dropdownMenu.length > 0 &&
+                        dropdownMenu.find((item) => item.id === index)
+                          ? dropdownMenu.find((item) => item.id === index)?.graphName
+                          : "Graph Type"}
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem onClick={() => handleDropdownMenu(file.name, "Line Graph", index)}>
+                          Line Graph
+                        </MenuItem>
+                        <MenuItem onClick={() => handleDropdownMenu(file.name, "Bar Graph", index)}>
+                          Bar Graph
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  </Flex>
+                ) : null
+              )}
+            </Stack>
+          ) : (
+            <Text>No files passed.</Text>
+          )}
         </Box>
 
-        {/* footer */}
-        <Box
-          position="fixed"
-          bottom={4}
-          left={4}
-          width="100%"
-          p={5} // Padding for spacing; adjust as needed
-          // bg="gray.200" // Background color for visibility; adjust as needed
-        
-          // boxShadow="md" // Optional: Add shadow for visual separation
-        >
-          <Flex width="100%" justifyContent="space-between" alignItems="center">
-            <Button leftIcon={<ChevronLeftIcon />} colorScheme='gray' onClick={() => handleClick("Back")}>
+
+        <Box className="rounded-rectangle-box" p={5}>
+          <Stack spacing={4} align="start">
+            <Text fontWeight="bold">Select Observation Buttons:</Text>
+            <Button leftIcon={<AddIcon />} onClick={onOpen}>
+              Add Observation
+            </Button>
+          </Stack>
+          <CreateObservationModal
+            initialRef={initialRef}
+            finalRef={finalRef}
+            isOpen={isOpen}
+            onClose={onClose}
+          />
+        </Box>
+
+
+
+        <Box position="fixed" bottom={4} left={4} width="100%" p={5}>
+          <Flex justify="space-between" align="center">
+            <Button leftIcon={<ChevronLeftIcon />} colorScheme="gray" onClick={() => handleClick("Back")}>
               Back
             </Button>
-            <Button rightIcon={<ChevronRightIcon />} mr={5} colorScheme='green' onClick={() => handleClick("Submit")}>
+            <Button mr={5} rightIcon={<ChevronRightIcon />} colorScheme="green" onClick={() => handleClick("Submit")}>
               Submit
             </Button>
           </Flex>
         </Box>
+
 
       </Stack>
     </Container>
