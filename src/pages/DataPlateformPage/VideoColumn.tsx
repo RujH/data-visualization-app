@@ -78,18 +78,19 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
 
   useEffect(() => {
     Object.entries(videoRefs.current).forEach(([index, ref]) => {
-      if (ref.current) {
-        if (isPlaying && ref.current.paused) {
-          ref.current.play().catch(console.error);
-        } else if (!isPlaying && !ref.current.paused) {
-          ref.current.pause();
+      const video = ref.current;
+      if (video) {
+        if (isPlaying && video.paused) {
+          video.play().catch(console.error);
+        } else if (!isPlaying && !video.paused) {
+          video.pause();
         }
 
         const expandedWindow = expandedWindows[parseInt(index)];
         if (expandedWindow && !expandedWindow.closed) {
           expandedWindow.postMessage({
             type: 'sync',
-            time: ref.current.currentTime,
+            time: video.currentTime,
             isPlaying
           }, '*');
         }
@@ -201,7 +202,6 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                 }
               });
 
-              // Initial sync
               window.opener.postMessage({
                 type: 'requestSync',
                 index: ${index}
@@ -211,17 +211,19 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
         </html>
       `);
 
-      const expandedVideo = newWindow.document.querySelector('video');
-      if (expandedVideo && videoRefs.current[index].current) {
-        expandedVideo.currentTime = videoRefs.current[index].current.currentTime;
-        if (!videoRefs.current[index].current.paused) {
+      const expandedVideo = newWindow.document.querySelector('video') as HTMLVideoElement;
+      const mainVideo = videoRefs.current[index]?.current;
+
+      if (expandedVideo && mainVideo) {
+        expandedVideo.currentTime = mainVideo.currentTime;
+        if (!mainVideo.paused) {
           expandedVideo.play().catch(console.error);
         }
       }
 
       const messageHandler = (event: MessageEvent) => {
         if (event.source === newWindow) {
-          const mainVideo = videoRefs.current[index].current;
+          const mainVideo = videoRefs.current[index]?.current;
           if (!mainVideo) return;
 
           switch (event.data.type) {
@@ -264,7 +266,7 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
   };
 
   const handleTimeUpdate = (index: number) => {
-    const video = videoRefs.current[index].current;
+    const video = videoRefs.current[index]?.current;
     if (video) {
       registerVideo({
         currentTime: video.currentTime,
@@ -273,7 +275,6 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
         videoRef: videoRefs.current[index]
       });
 
-      // Throttle sync messages to expanded window
       if (syncTimeoutRef.current[index]) {
         clearTimeout(syncTimeoutRef.current[index]);
       }
@@ -287,7 +288,7 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
             isPlaying: !video.paused
           }, '*');
         }
-      }, 16); // ~60fps
+      }, 16);
     }
   };
 

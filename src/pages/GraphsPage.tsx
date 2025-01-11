@@ -1,15 +1,16 @@
 import Graph from "../components/Graph";
-import {data} from '../data/graphsData';
+import { Box, VStack } from "@chakra-ui/react";
 
 export default function GraphsPage() {
   return (
-    <>
-      <Graph xAxisName={"test1"} yAxisName={"test2"} ></Graph>
-      {/* <Graph xAxisName={"test2"} yAxisName={"test2"} ></Graph>
-      <Graph xAxisName={"test3"} yAxisName={"test3"} ></Graph>
-      <Graph xAxisName={"test4"} yAxisName={"test4"} ></Graph> */}
-    
-    </>
-
-  )
+    <VStack spacing={4} p={4}>
+      <Box width="100%">
+        <Graph 
+          xAxisName="Time" 
+          yAxisName="Data 1" 
+          csvPath="/data.csv"
+        />
+      </Box>
+    </VStack>
+  );
 }

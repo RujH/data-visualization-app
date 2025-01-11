@@ -2,9 +2,11 @@ import VideoColumn from './VideoColumn';
 import ButtonsColumn from './ButtonsColumn';
 import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { Button, Box, Container, Flex } from '@chakra-ui/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Observation } from '../../components/CreateObservationModal';
+import GraphsColumn from './GraphsColumn';
+import { useFileContext } from '../../FileContext';
 
 export interface VideoControl {
   currentTime: number;
@@ -16,11 +18,27 @@ export interface VideoControl {
 export default function DataPlatformPage() {
   const location = useLocation();
   const initialObservations = (location.state?.observations as Observation[]) || [];
+  const { files } = useFileContext();
   
   const [videoControls, setVideoControls] = useState<VideoControl[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoStartTime, setVideoStartTime] = useState<number | undefined>();
   const maxDuration = Math.max(...videoControls.map(c => c.duration || 0), 0);
+
+  // Extract video start time from filename
+  useEffect(() => {
+    if (files) {
+      const videoFile = Array.from(files).find(file => file.name.endsWith('.mp4'));
+      if (videoFile) {
+        const match = videoFile.name.match(/^(\d+)/);
+        if (match) {
+          const startTime = parseInt(match[1], 10);
+          setVideoStartTime(startTime);
+        }
+      }
+    }
+  }, [files]);
 
   const handleViewGraphsButton = () => {
     window.open('/GraphsPage');
@@ -110,6 +128,10 @@ export default function DataPlatformPage() {
         <Flex justifyContent="flex-end">
           <Button size={"md"} leftIcon={<ExternalLinkIcon/>} onClick={handleViewGraphsButton}>View Graphs</Button>
         </Flex>
+        <GraphsColumn
+          currentTime={currentTime}
+          videoStartTime={videoStartTime}
+        />
       </Box>
     </Container>
   );
