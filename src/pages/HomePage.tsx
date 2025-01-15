@@ -1,11 +1,10 @@
-import { Box, Stack, Text, Flex, Button, SimpleGrid } from '@chakra-ui/react';
+import { Box, Stack, Text, Flex, Button } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import React, {useState,  useEffect, useRef,  } from 'react';
 import { ChevronRightIcon } from '@chakra-ui/icons';
 import { useFileContext } from '../FileContext';
 
 export default function HomePage() {
-  
   const { files, setFiles } = useFileContext(); 
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputError, setInputError] = useState<boolean>(false);
@@ -17,7 +16,6 @@ export default function HomePage() {
     }
   }, []);
 
-
   const handleFolderSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -27,18 +25,14 @@ export default function HomePage() {
     }
   };
 
-
   const handleNextButtonClick = () => {
- 
     if (files) {
       navigate('/SettingPage', { state: { files } });
     } else {
-      
       console.error("No files selected.");
       setInputError(true);
     }
   };
-
 
   return (
     <Stack
@@ -49,36 +43,45 @@ export default function HomePage() {
       p={4}
     >
       <div className='backgroundShap'>
-        <div className="rounded-box">
+        <Box
+          w="100%"
+          maxW="500px"
+          mx="auto"
+          mt="10vh"
+        >
+          <div className="rounded-box">
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              p={6}
+              gap={4}
+            >
+              <Text fontWeight="bold" fontSize="xl" mb={4}>Upload Folder</Text>
+              <Box w="100%">
+                <div className="form-group">
+                  <label htmlFor="sessionInput" className="form-label">Session Data: </label>
+                  <input
+                    id="file-picker"
+                    ref={inputRef}
+                    type="file"
+                    onChange={handleFolderSelection}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      border: inputError ? '2px solid red' : '1px solid #e2e8f0',
+                      outline: 'none',
+                      marginTop: '8px'
+                    }}
+                  />
+                </div>
+              </Box>
+            </Flex>
+          </div>
+        </Box>
 
-        <SimpleGrid minChildWidth="sm" gap="40px">  
-          <Text fontWeight="bold"> Upload Folder</Text>
-          <Flex align="center">
-            <div className="form-group">
-              <label htmlFor="sessionInput" className="form-label">Session Data: </label>
-              <input
-                id="file-picker"
-                ref={inputRef}
-                type="file"
-                onChange={handleFolderSelection}
-                required
-                
-                style={inputError ? {
-                  borderColor: 'red',  
-                  borderWidth: '2px',  
-                  borderStyle: 'solid',  
-                  borderRadius: '8px', 
-                  padding: '8px',  
-                  outline: 'none',  
-                  marginBottom: '10px'  
-                } : {}}
-              />
-            </div>
-          </Flex>
-        </SimpleGrid>
-        </div>
-
-        {/* footer */}
         <Box
           position="fixed"
           bottom={4}
@@ -86,14 +89,18 @@ export default function HomePage() {
           width="100%"
           p={5} 
         >
-          <Flex justifyContent="flex-end" alignItems="center" align={"right"} pt={10}>
-            <Button rightIcon={<ChevronRightIcon />} mr={5} colorScheme='green' onClick={() => handleNextButtonClick()}>Next</Button>
+          <Flex justifyContent="flex-end" alignItems="center" pt={10}>
+            <Button 
+              rightIcon={<ChevronRightIcon />} 
+              mr={5} 
+              colorScheme='green' 
+              onClick={handleNextButtonClick}
+            >
+              Next
+            </Button>
           </Flex>
         </Box>
-
-        </div>
-
-      
+      </div>
     </Stack> 
-  )
+  );
 }

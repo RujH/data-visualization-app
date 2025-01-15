@@ -41,6 +41,7 @@ interface CreateObservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (observation: Observation) => void;
+  existingObservations?: Observation[];
 }
 
 export default function CreateObservationModal(props: CreateObservationModalProps) {
@@ -54,6 +55,22 @@ export default function CreateObservationModal(props: CreateObservationModalProp
       toast({
         title: 'Error',
         description: 'Please enter a name for the observation',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Check for duplicate names
+    const isDuplicate = props.existingObservations?.some(
+      obs => obs.name.toLowerCase() === name.trim().toLowerCase()
+    );
+
+    if (isDuplicate) {
+      toast({
+        title: 'Error',
+        description: 'An observation with this name already exists. Please use a unique name.',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -99,7 +116,7 @@ export default function CreateObservationModal(props: CreateObservationModalProp
         <ModalCloseButton />
 
         <ModalBody pb={6}>
-          <FormControl>
+          <FormControl isRequired>
             <FormLabel>Name</FormLabel>
             <Input 
               ref={props.initialRef} 
@@ -118,7 +135,7 @@ export default function CreateObservationModal(props: CreateObservationModalProp
             />
           </FormControl>
 
-          <FormControl mt={4}>
+          <FormControl mt={4} isRequired>
             <FormLabel>Type</FormLabel>
             <Menu>
               <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>

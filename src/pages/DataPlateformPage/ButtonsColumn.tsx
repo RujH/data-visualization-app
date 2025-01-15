@@ -28,7 +28,10 @@ import {
     IconButton
 } from '@chakra-ui/react';
 import { useRef, useState, useEffect } from 'react';
-import { AddIcon, DeleteIcon, AttachmentIcon } from '@chakra-ui/icons';
+import { AddIcon, DownloadIcon, ArrowUpIcon } from '@chakra-ui/icons';
+import { FiTrash2 } from 'react-icons/fi';
+import { MdExitToApp } from 'react-icons/md';
+import { BsPlayFill, BsPauseFill } from 'react-icons/bs';
 import CreateObservationModal, { Observation } from '../../components/CreateObservationModal';
 import { useNavigate } from 'react-router-dom';
 
@@ -74,6 +77,7 @@ export default function ButtonsColumn({
     const navigate = useNavigate();
     const { isOpen: isEndSessionModalOpen, onOpen: onEndSessionModalOpen, onClose: onEndSessionModalClose } = useDisclosure();
     const { isOpen: isAddObeservationModalOpen, onOpen: onAddObeservationModalOpen, onClose: onAddObeservationModalClose } = useDisclosure();
+    const { isOpen: isClearHistoryModalOpen, onOpen: onClearHistoryModalOpen, onClose: onClearHistoryModalClose } = useDisclosure();
 
     const initialRef = useRef(null);
     const finalRef = useRef(null);
@@ -119,7 +123,6 @@ export default function ButtonsColumn({
         reader.onload = (e) => {
             const text = e.target?.result as string;
             const lines = text.split('\n').filter(line => line.trim());
-            // Skip header line but verify it exists
             if (lines.length < 2) {
                 toast({
                     title: 'Import Failed',
@@ -131,24 +134,21 @@ export default function ButtonsColumn({
                 return;
             }
 
-            // Create a map of existing observations
             const existingObservations = new Map(observations.map(obs => [obs.id, obs]));
             const newObservations = new Set<ImportedObservation>();
             const importedLogs: ObservationLog[] = [];
 
-            // Process each line (skip header)
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',');
-                if (values.length < 5) continue; // Skip invalid lines
+                if (values.length < 5) continue;
 
                 const observationId = values[0];
-                const observationName = values[1].replace(/^"|"$/g, ''); // Remove quotes
+                const observationName = values[1].replace(/^"|"$/g, '');
                 const observationType = values[2] as 'Point' | 'Duration';
                 const timestamp = new Date(values[3]).getTime();
                 const startTime = parseTimeString(values[4]);
                 const endTime = values[5] ? parseTimeString(values[5]) : undefined;
 
-                // If observation doesn't exist, add it to the set of new observations
                 if (!existingObservations.has(observationId)) {
                     newObservations.add({
                         id: observationId,
@@ -158,7 +158,6 @@ export default function ButtonsColumn({
                     });
                 }
 
-                // Create log entry
                 importedLogs.push({
                     id: `${Date.now()}-${Math.random()}`,
                     observationId,
@@ -171,7 +170,6 @@ export default function ButtonsColumn({
                 });
             }
 
-            // Add new observations
             const newObservationsArray: Observation[] = Array.from(newObservations).map(obs => ({
                 id: obs.id,
                 name: obs.name,
@@ -179,8 +177,6 @@ export default function ButtonsColumn({
                 description: obs.description
             }));
             setObservations(prev => [...prev, ...newObservationsArray]);
-
-            // Add imported logs
             setObservationLogs(prev => [...prev, ...importedLogs]);
 
             toast({
@@ -203,7 +199,6 @@ export default function ButtonsColumn({
         };
 
         reader.readAsText(file);
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -305,11 +300,18 @@ export default function ButtonsColumn({
     };
 
     const handleDeleteAll = () => {
+        // Clear all observations
+        setObservations([]);
+        // Clear all observation logs
         setObservationLogs([]);
+        // Clear active observations
         setActiveObservations({});
+        // Close the modal
+        onClearHistoryModalClose();
+        
         toast({
             title: 'History Cleared',
-            description: 'All observation logs have been cleared',
+            description: 'All observations and logs have been cleared',
             status: 'info',
             duration: 2000,
             isClosable: true,
@@ -344,13 +346,13 @@ export default function ButtonsColumn({
 
     const handleEndSession = async () => {
         try {
-            // Export CSV
+            // Export data first
             exportToCSV();
             
             // Close the modal
             onEndSessionModalClose();
             
-            // Clear all state
+            // Clear all states
             setObservations([]);
             setObservationLogs([]);
             setActiveObservations({});
@@ -367,11 +369,8 @@ export default function ButtonsColumn({
                 isClosable: true,
             });
 
-            // Navigate to home page after a short delay to allow the toast to be visible
-            setTimeout(() => {
-                navigate('/', { replace: true });
-                window.location.reload(); // Force reload to refresh data
-            }, 1000);
+            // Navigate to homepage immediately with replace to prevent going back
+            navigate('/', { replace: true });
         } catch (error) {
             toast({
                 title: 'Error',
@@ -434,19 +433,46 @@ export default function ButtonsColumn({
                 </Flex>
 
                 <ButtonGroup gap='2'>
-                    <Button size='sm' onClick={() => onSkip(-10)}>-10 Sec</Button>
-                    <Button size='sm' onClick={onPlayPause}>{isPlaying ? 'Pause' : 'Play'}</Button>
-                    <Button size='sm' onClick={() => onSkip(10)}>+10 Sec</Button>
+                    <Button 
+                        size='sm' 
+                        onClick={() => onSkip(-10)}
+                        variant="outline"
+                        borderWidth="2px"
+                        _hover={{ bg: 'gray.100' }}
+                    >-10 Sec</Button>
+                    <Button 
+                        size='sm' 
+                        onClick={onPlayPause}
+                        variant="outline"
+                        borderWidth="2px"
+                        _hover={{ bg: 'gray.100' }}
+                        leftIcon={isPlaying ? <BsPauseFill /> : <BsPlayFill />}
+                    >{isPlaying ? 'Pause' : 'Play'}</Button>
+                    <Button 
+                        size='sm' 
+                        onClick={() => onSkip(10)}
+                        variant="outline"
+                        borderWidth="2px"
+                        _hover={{ bg: 'gray.100' }}
+                    >+10 Sec</Button>
                 </ButtonGroup>
 
                 <Box mt={2}>
-                    <Button leftIcon={<AddIcon />} onClick={onAddObeservationModalOpen} size="sm">Add Observation</Button>
+                    <Button 
+                        leftIcon={<AddIcon />} 
+                        onClick={onAddObeservationModalOpen} 
+                        size="sm"
+                        variant="outline"
+                        borderWidth="2px"
+                        _hover={{ bg: 'gray.100' }}
+                    >Add Observation</Button>
                     <CreateObservationModal
                         initialRef={initialRef}
                         finalRef={finalRef}
                         isOpen={isAddObeservationModalOpen}
                         onClose={onAddObeservationModalClose}
                         onSave={handleSaveObservation}
+                        existingObservations={observations}
                     />
                 </Box>
 
@@ -527,7 +553,7 @@ export default function ButtonsColumn({
                                             <Td>
                                                 <IconButton
                                                     aria-label="Delete entry"
-                                                    icon={<DeleteIcon />}
+                                                    icon={<FiTrash2 />}
                                                     size="xs"
                                                     colorScheme="red"
                                                     variant="ghost"
@@ -553,12 +579,25 @@ export default function ButtonsColumn({
                     />
                     <ButtonGroup size="sm" spacing={2}>
                         <Button
-                            leftIcon={<AttachmentIcon />}
+                            leftIcon={<DownloadIcon />}
                             onClick={() => fileInputRef.current?.click()}
+                            variant="outline"
+                            borderWidth="2px"
+                            colorScheme="green"
+                            _hover={{ bg: 'green.50' }}
                         >
                             Import CSV
                         </Button>
-                        <Button onClick={exportToCSV}>Export CSV</Button>
+                        <Button 
+                            leftIcon={<ArrowUpIcon />}
+                            onClick={exportToCSV}
+                            variant="outline"
+                            borderWidth="2px"
+                            colorScheme="blue"
+                            _hover={{ bg: 'blue.50' }}
+                        >
+                            Export CSV
+                        </Button>
                     </ButtonGroup>
                 </Box>
 
@@ -566,12 +605,55 @@ export default function ButtonsColumn({
                     <Stack alignItems="center">
                         <Text fontWeight="bold">Actions</Text>
                         <ButtonGroup size="sm">
-                            <Button colorScheme="red" onClick={handleDeleteAll}>Clear History</Button>
-                            <Button colorScheme="red" onClick={onEndSessionModalOpen}>End Session</Button>
+                            <Button 
+                                colorScheme="red" 
+                                onClick={onClearHistoryModalOpen}
+                                leftIcon={<FiTrash2 />}
+                            >
+                                Clear History
+                            </Button>
+                            <Button 
+                                colorScheme="red" 
+                                onClick={onEndSessionModalOpen}
+                                leftIcon={<MdExitToApp />}
+                            >
+                                End Session
+                            </Button>
                         </ButtonGroup>
                     </Stack>
                 </Box>
 
+                {/* Clear History Modal */}
+                <Modal isOpen={isClearHistoryModalOpen} onClose={onClearHistoryModalClose}>
+                    <ModalOverlay />
+                    <ModalContent>
+                        <ModalHeader>Clear History</ModalHeader>
+                        <ModalCloseButton />
+                        <ModalBody alignSelf="center">
+                            Are you sure? This will remove all observation buttons and history.
+                            This action cannot be undone.
+                        </ModalBody>
+                        <ModalFooter width="100%" justifyContent="space-between" alignItems="center">
+                            <Button 
+                                size="sm" 
+                                colorScheme='gray' 
+                                onClick={onClearHistoryModalClose}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                colorScheme='red' 
+                                onClick={handleDeleteAll}
+                                leftIcon={<FiTrash2 />}
+                            >
+                                Clear All
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+
+                {/* End Session Modal */}
                 <Modal isOpen={isEndSessionModalOpen} onClose={onEndSessionModalClose} id="end-session-modal-id">
                     <ModalOverlay />
                     <ModalContent>
@@ -581,8 +663,21 @@ export default function ButtonsColumn({
                             Are you sure? Your observation logs will be exported as CSV.
                         </ModalBody>
                         <ModalFooter width="100%" justifyContent="space-between" alignItems="center">
-                            <Button size="sm" colorScheme='red' mr={3} onClick={handleEndSession}>End Session</Button>
-                            <Button size="sm" colorScheme='blue' onClick={onEndSessionModalClose}>Cancel</Button>
+                            <Button 
+                                size="sm" 
+                                colorScheme='gray' 
+                                onClick={onEndSessionModalClose}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                colorScheme='red'
+                                onClick={handleEndSession}
+                                leftIcon={<MdExitToApp />}
+                            >
+                                End Session
+                            </Button>
                         </ModalFooter>
                     </ModalContent>
                 </Modal>

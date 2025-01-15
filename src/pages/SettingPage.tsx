@@ -11,10 +11,11 @@ import {
   MenuItem,
   useDisclosure,
   Container,
-  VStack,
+  SimpleGrid,
   HStack,
   Tooltip,
-  Badge
+  Badge,
+  useToast
 } from '@chakra-ui/react';
 
 import { 
@@ -40,6 +41,7 @@ export default function SettingPage() {
   const [dropdownMenu, setDropdownMenu] = useState<dataToChartMap[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [observations, setObservations] = useState<Observation[]>([]);
+  const toast = useToast();
 
   const initialRef = useRef(null);
   const finalRef = useRef(null);
@@ -51,6 +53,26 @@ export default function SettingPage() {
       navigate('/');
     }
     else if (action === "Submit") {
+      const sensorFiles = Array.from(files).filter(file => 
+        file.webkitRelativePath.includes("Sensor") && !file.name.startsWith(".")
+      );
+      
+      // Check if all sensor files have graph types selected
+      const allGraphsSelected = sensorFiles.every(file => 
+        dropdownMenu.some(item => item.fileName === file.name)
+      );
+
+      if (!allGraphsSelected) {
+        toast({
+          title: "Graph Type Required",
+          description: "Please select a graph type for all sensor files before proceeding.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
       // Pass observations to DataPlatformPage
       navigate('/DataPlatformPage', { state: { observations } });
     }
@@ -75,6 +97,17 @@ export default function SettingPage() {
     setObservations(prev => prev.filter(obs => obs.id !== observationId));
   };
 
+  // Check if all sensor files have graph types selected
+  const sensorFiles = Array.from(files).filter(file => 
+    file.webkitRelativePath.includes("Sensor") && !file.name.startsWith(".")
+  );
+  const allGraphsSelected = sensorFiles.every(file => 
+    dropdownMenu.some(item => item.fileName === file.name)
+  );
+
+  // Calculate number of columns needed (8 buttons per column)
+  const numColumns = Math.ceil(observations.length / 8);
+
   return (
     <Container maxW="container.lg">
       <Stack
@@ -84,7 +117,10 @@ export default function SettingPage() {
       >
         {/* Select graph section */}
         <Box className="rounded-rectangle-box" p={5}>
-          <Text mb={4} fontWeight="bold">Select Graph:</Text>
+          <Flex align="center" mb={4}>
+            <Text fontWeight="bold">Select Graph</Text>
+            <Text color="red" ml={1}>*</Text>
+          </Flex>
           {files && files.length > 0 ? (
             <Stack spacing={4}>
               {Array.from(files).map((file, index) =>
@@ -95,6 +131,7 @@ export default function SettingPage() {
                       <MenuButton
                         as={Button}
                         rightIcon={<ChevronDownIcon />}
+                        colorScheme={dropdownMenu.find((item) => item.id === index) ? "green" : "gray"}
                       >
                         {dropdownMenu.length > 0 &&
                         dropdownMenu.find((item) => item.id === index)
@@ -127,35 +164,41 @@ export default function SettingPage() {
             </Button>
 
             {observations.length > 0 && (
-              <VStack spacing={2} align="stretch" width="100%" mt={4}>
-                {observations.map(observation => (
-                  <HStack key={observation.id} spacing={2}>
-                    <Tooltip 
-                      label={observation.description || 'No description'}
-                      placement="top"
-                    >
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        width="100%"
-                      >
-                        {observation.name}
-                        <Badge ml={2} colorScheme="green">
-                          {observation.type}
-                        </Badge>
-                      </Button>
-                    </Tooltip>
-                    <Button
-                      size="sm"
-                      colorScheme="red"
-                      variant="ghost"
-                      onClick={() => handleDeleteObservation(observation.id)}
-                    >
-                      <SmallCloseIcon />
-                    </Button>
-                  </HStack>
+              <SimpleGrid columns={numColumns} spacing={4} width="100%" mt={4}>
+                {Array.from({ length: numColumns }).map((_, colIndex) => (
+                  <Stack key={colIndex} spacing={2}>
+                    {observations.slice(colIndex * 8, (colIndex + 1) * 8).map(observation => (
+                      <HStack key={observation.id} spacing={2}>
+                        <Tooltip 
+                          label={observation.description || 'No description'}
+                          placement="top"
+                        >
+                          <Button
+                            size="sm"
+                            colorScheme="blue"
+                            width="auto"
+                            minW="120px"
+                            maxW="200px"
+                          >
+                            {observation.name}
+                            <Badge ml={2} colorScheme="green">
+                              {observation.type}
+                            </Badge>
+                          </Button>
+                        </Tooltip>
+                        <Button
+                          size="sm"
+                          colorScheme="red"
+                          variant="ghost"
+                          onClick={() => handleDeleteObservation(observation.id)}
+                        >
+                          <SmallCloseIcon />
+                        </Button>
+                      </HStack>
+                    ))}
+                  </Stack>
                 ))}
-              </VStack>
+              </SimpleGrid>
             )}
           </Stack>
 
@@ -165,6 +208,7 @@ export default function SettingPage() {
             isOpen={isOpen}
             onClose={onClose}
             onSave={handleSaveObservation}
+            existingObservations={observations}
           />
         </Box>
 
@@ -173,7 +217,13 @@ export default function SettingPage() {
             <Button leftIcon={<ChevronLeftIcon />} colorScheme="gray" onClick={() => handleClick("Back")}>
               Back
             </Button>
-            <Button mr={5} rightIcon={<ChevronRightIcon />} colorScheme="green" onClick={() => handleClick("Submit")}>
+            <Button 
+              mr={5} 
+              rightIcon={<ChevronRightIcon />} 
+              colorScheme={allGraphsSelected ? "green" : "gray"}
+              onClick={() => handleClick("Submit")}
+              isDisabled={!allGraphsSelected}
+            >
               Submit
             </Button>
           </Flex>

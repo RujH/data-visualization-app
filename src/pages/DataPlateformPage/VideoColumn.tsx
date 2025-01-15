@@ -5,7 +5,8 @@ import {
   Collapse, 
   Flex 
 } from '@chakra-ui/react';
-import { MinusIcon, AddIcon } from '@chakra-ui/icons';
+import { MinusIcon, AddIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import { BsVolumeMuteFill, BsVolumeUpFill } from 'react-icons/bs';
 import { useFileContext } from '../../FileContext';
 import { VideoControl } from './DataPlatformPage';
 
@@ -132,7 +133,7 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
               </video>
               <div class="controls">
                 <button onclick="window.postMessage({type: 'skip', seconds: -10}, '*')">-10s</button>
-                <button onclick="window.postMessage({type: 'togglePlay'}, '*')">Play/Pause</button>
+                <button onclick="window.postMessage({type: 'togglePlay'}, '*')">${isPlaying ? 'Pause' : 'Play'}</button>
                 <button onclick="window.postMessage({type: 'skip', seconds: 10}, '*')">+10s</button>
               </div>
             </div>
@@ -306,7 +307,12 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
       {mp4Files.length > 0 ? (
         mp4Files.map((file, index) => (
           <div key={index}>
-            <Button mb={"2"} size={"xs"} onClick={handleToggle} leftIcon={show ? <MinusIcon /> : <AddIcon />}>
+            <Button 
+              mb={"2"} 
+              size={"xs"} 
+              onClick={handleToggle} 
+              leftIcon={show ? <MinusIcon /> : <AddIcon />}
+            >
               {file.name}
             </Button>
 
@@ -332,10 +338,19 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                   display="flex"
                   justifyContent="flex-end" 
                 >
-                  <Button size="xs" mr={2} onClick={handleMute}>
+                  <Button 
+                    size="xs" 
+                    mr={2} 
+                    onClick={handleMute}
+                    leftIcon={mute ? <BsVolumeMuteFill /> : <BsVolumeUpFill />}
+                  >
                     {mute ? 'Unmute' : 'Mute'}
                   </Button>
-                  <Button size="xs" onClick={() => handleExpandVideoButton(file, index)}>
+                  <Button 
+                    size="xs" 
+                    onClick={() => handleExpandVideoButton(file, index)}
+                    leftIcon={<ExternalLinkIcon />}
+                  >
                     Expand Video
                   </Button>
                 </Box>
