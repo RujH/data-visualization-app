@@ -2,7 +2,7 @@ import Graph from "../../components/Graph";
 import { Box, VStack, Button, Flex } from "@chakra-ui/react";
 import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { useFileContext } from '../../FileContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface GraphsColumnProps {
   currentTime?: number;
@@ -14,9 +14,96 @@ interface CsvFile {
   path: string;
 }
 
+interface WindowMessage {
+  type: string;
+  [key: string]: any;
+}
+
+interface WindowState {
+  window: Window;
+  isReady: boolean;
+}
+
+type GraphWindowMessage = {
+  type: 'GRAPH_WINDOW_READY';
+} | {
+  type: 'GRAPH_STATE_UPDATED';
+};
+
 export default function GraphsColumn({ currentTime, videoStartTime }: GraphsColumnProps) {
   const { files } = useFileContext();
   const [csvFiles, setCsvFiles] = useState<CsvFile[]>([]);
+  // Track window references and their ready state
+  const openWindowsRef = useRef<WindowState[]>([]);
+
+  // Send time update to a specific window
+  const sendTimeUpdate = useCallback((targetWindow: Window) => {
+    if (currentTime === undefined || videoStartTime === undefined) return;
+    
+    try {
+      targetWindow.postMessage({
+        type: 'TIME_UPDATE',
+        currentTime,
+        videoStartTime
+      }, '*');
+      return true;
+    } catch (error) {
+      console.error('Failed to send time update:', error);
+      return false;
+    }
+  }, [currentTime, videoStartTime]);
+
+  // Handle messages from graph windows
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent<GraphWindowMessage>) => {
+      if (event.data.type === 'GRAPH_WINDOW_READY') {
+        const sourceWindow = event.source as Window;
+        
+        // Update window ready state and send initial time
+        openWindowsRef.current = openWindowsRef.current.map(w => {
+          if (w.window === sourceWindow) {
+            sendTimeUpdate(sourceWindow);
+            return { ...w, isReady: true };
+          }
+          return w;
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [sendTimeUpdate]);
+
+  // Update all windows when time changes
+  useEffect(() => {
+    if (currentTime === undefined || videoStartTime === undefined) return;
+
+    // Clean up closed windows and update remaining ones
+    openWindowsRef.current = openWindowsRef.current.filter(({ window, isReady }) => {
+      if (!window || window.closed) return false;
+      if (isReady) {
+        return sendTimeUpdate(window);
+      }
+      return true;
+    });
+  }, [currentTime, videoStartTime, sendTimeUpdate]);
+
+  // Periodic window updates
+  useEffect(() => {
+    const updateInterval = setInterval(() => {
+      if (currentTime === undefined || videoStartTime === undefined) return;
+
+      openWindowsRef.current = openWindowsRef.current.filter(({ window, isReady }) => {
+        if (!window || window.closed) return false;
+        if (isReady) {
+          return sendTimeUpdate(window);
+        }
+        return true;
+      });
+    }, 33); // ~30fps updates
+
+    return () => clearInterval(updateInterval);
+  }, [currentTime, videoStartTime, sendTimeUpdate]);
 
   // Find all CSV files
   useEffect(() => {
@@ -50,30 +137,29 @@ export default function GraphsColumn({ currentTime, videoStartTime }: GraphsColu
                   });
                   const newWindow = window.open(`/SingleGraphPage?${params.toString()}`);
                   if (newWindow) {
-                    // Send initial file data
-                    newWindow.postMessage({
-                      type: 'SINGLE_FILE_STATE',
-                      file: {
-                        name: csv.name,
-                        path: csv.path
-                      }
-                    }, '*');
-                    
-                    // Setup time sync
-                    const interval = setInterval(() => {
-                      if (currentTime !== undefined && videoStartTime !== undefined) {
-                        newWindow.postMessage({
-                          type: 'TIME_UPDATE',
-                          currentTime,
-                          videoStartTime
-                        }, '*');
-                      }
-                    }, 100);
+                    try {
+                      // Send initial file data
+                      newWindow.postMessage({
+                        type: 'SINGLE_FILE_STATE',
+                        file: {
+                          name: csv.name,
+                          path: csv.path
+                        }
+                      }, '*');
+                      
+                      // Store window reference with ready state
+                      openWindowsRef.current.push({
+                        window: newWindow,
+                        isReady: false
+                      });
 
-                    // Cleanup interval when window closes
-                    newWindow.addEventListener('unload', () => {
-                      clearInterval(interval);
-                    });
+                      // Send current time immediately
+                      if (currentTime !== undefined && videoStartTime !== undefined) {
+                        sendTimeUpdate(newWindow);
+                      }
+                    } catch (error) {
+                      console.error('Failed to initialize graph window:', error);
+                    }
                   }
                 }}
               >
