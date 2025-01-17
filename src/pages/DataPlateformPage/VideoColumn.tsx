@@ -32,10 +32,15 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
       const filteredFiles = fileArray.filter(file => file.name.endsWith('.mp4'));
       setMp4Files(filteredFiles);
       
+      // Initialize video refs and set mute states to true by default
       filteredFiles.forEach((_, index) => {
         if (!videoRefs.current[index]) {
           videoRefs.current[index] = createRef<HTMLVideoElement>();
         }
+        setMuteStates(prev => ({
+          ...prev,
+          [index]: true
+        }));
       });
     }
   }, [files]);

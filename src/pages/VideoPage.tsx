@@ -18,7 +18,7 @@ export default function VideoPage() {
     <div key={index}> 
       <Flex direction="column" m={"5"}>
         <Box borderRadius="12px" overflow="hidden" width="100%">
-          <video controls width="100%">
+          <video controls muted width="100%">
             <source src={URL.createObjectURL(file)} type="video/mp4" /> {/* Use URL.createObjectURL for local files */}
             Your browser does not support the video tag.
           </video>
