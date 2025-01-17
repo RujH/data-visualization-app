@@ -2,7 +2,7 @@ import VideoColumn from './VideoColumn';
 import ButtonsColumn from './ButtonsColumn';
 import { Box, Container, Flex } from '@chakra-ui/react';
 import { useState, useCallback, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Observation } from '../../components/CreateObservationModal';
 import GraphsColumn from './GraphsColumn';
 import { useFileContext } from '../../FileContext';
@@ -17,8 +17,46 @@ export interface VideoControl {
 
 export default function DataPlatformPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialObservations = (location.state?.observations as Observation[]) || [];
   const { files } = useFileContext();
+
+  // Handle browser refresh
+  useEffect(() => {
+    // Check if we're coming from a refresh
+    const isRefresh = sessionStorage.getItem('isRefreshing');
+    if (isRefresh) {
+      sessionStorage.removeItem('isRefreshing');
+      // Cleanup videos before navigation
+      videoControls.forEach(control => {
+        if (control.videoRef.current) {
+          control.videoRef.current.pause();
+          control.videoRef.current.src = '';
+          control.videoRef.current.load();
+        }
+      });
+      // Reset video controls
+      setVideoControls([]);
+      setIsPlaying(false);
+      navigate('/');
+    }
+
+    const handleBeforeUnload = () => {
+      // Pause all videos before setting refresh flag
+      videoControls.forEach(control => {
+        if (control.videoRef.current) {
+          control.videoRef.current.pause();
+        }
+      });
+      sessionStorage.setItem('isRefreshing', 'true');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [navigate]);
   
   const [videoControls, setVideoControls] = useState<VideoControl[]>([]);
   const [currentTime, setCurrentTime] = useState(0);

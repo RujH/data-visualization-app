@@ -1,4 +1,4 @@
-import { useRef, useState} from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { 
   Box, 
   Stack, 
@@ -47,6 +47,26 @@ export default function SettingPage() {
   const finalRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // Handle browser refresh
+  useEffect(() => {
+    // Check if we're coming from a refresh
+    const isRefresh = sessionStorage.getItem('isRefreshing');
+    if (isRefresh) {
+      sessionStorage.removeItem('isRefreshing');
+      navigate('/');
+    }
+
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem('isRefreshing', 'true');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [navigate]);
 
   const handleClick = (action: string) => {
     if (action === "Back") {
