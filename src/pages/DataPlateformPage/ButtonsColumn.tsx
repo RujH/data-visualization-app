@@ -177,7 +177,7 @@ export default function ButtonsColumn({
                 description: obs.description
             }));
             setObservations(prev => [...prev, ...newObservationsArray]);
-            setObservationLogs(prev => [...prev, ...importedLogs]);
+            setObservationLogs(prev => [...prev, ...importedLogs].sort((a, b) => a.videoTimeStart - b.videoTimeStart));
 
             toast({
                 title: 'Import Successful',
@@ -251,7 +251,7 @@ export default function ButtonsColumn({
                 timestamp: Date.now(),
                 videoTimeStart: currentTime
             };
-            setObservationLogs(prev => [...prev, newLog]);
+            setObservationLogs(prev => [...prev, newLog].sort((a, b) => a.videoTimeStart - b.videoTimeStart));
             toast({
                 title: 'Point Logged',
                 description: `${observation.name} logged at ${formatTime(currentTime)}`,
@@ -272,7 +272,7 @@ export default function ButtonsColumn({
                     videoTimeStart: currentTime,
                     isActive: true
                 };
-                setObservationLogs(prev => [...prev, newLog]);
+                setObservationLogs(prev => [...prev, newLog].sort((a, b) => a.videoTimeStart - b.videoTimeStart));
                 setActiveObservations(prev => ({ ...prev, [observation.id]: true }));
                 toast({
                     title: 'Duration Started',
@@ -539,7 +539,7 @@ export default function ButtonsColumn({
                                         <Th>Type</Th>
                                         <Th>Start Time</Th>
                                         <Th>End Time</Th>
-                                        <Th width="50px"></Th>
+                                        <Th>Actions</Th>
                                     </Tr>
                                 </Thead>
                                 <Tbody>
@@ -551,14 +551,31 @@ export default function ButtonsColumn({
                                             <Td>{log.videoTimeEnd ? formatTime(log.videoTimeEnd) : 
                                                 (log.isActive ? "Recording..." : "-")}</Td>
                                             <Td>
-                                                <IconButton
-                                                    aria-label="Delete entry"
-                                                    icon={<FiTrash2 />}
-                                                    size="xs"
-                                                    colorScheme="red"
-                                                    variant="ghost"
-                                                    onClick={() => handleDeleteEntry(log.id)}
-                                                />
+                                                <ButtonGroup size="xs" spacing={2}>
+                                                    <IconButton
+                                                        aria-label="Go to time"
+                                                        icon={<MdExitToApp />}
+                                                        size="xs"
+                                                        colorScheme="blue"
+                                                        variant="ghost"
+                                                        onClick={() => {
+                                                            const time = log.videoTimeStart;
+                                                            const hours = Math.floor(time / 3600);
+                                                            const minutes = Math.floor((time % 3600) / 60);
+                                                            const seconds = Math.floor(time % 60);
+                                                            onGoToTime(hours, minutes, seconds);
+                                                        }}
+                                                        title="Go to observation time"
+                                                    />
+                                                    <IconButton
+                                                        aria-label="Delete entry"
+                                                        icon={<FiTrash2 />}
+                                                        size="xs"
+                                                        colorScheme="red"
+                                                        variant="ghost"
+                                                        onClick={() => handleDeleteEntry(log.id)}
+                                                    />
+                                                </ButtonGroup>
                                             </Td>
                                         </Tr>
                                     ))}
