@@ -40,8 +40,45 @@ export default function DataPlatformPage() {
     }
   }, [files]);
 
-  const handleViewGraphsButton = () => {
-    window.open('/GraphsPage');
+  const [graphsWindow, setGraphsWindow] = useState<Window | null>(null);
+
+  // Send time updates to graphs window
+  useEffect(() => {
+    if (graphsWindow && currentTime !== undefined && videoStartTime !== undefined) {
+      graphsWindow.postMessage({
+        type: 'TIME_UPDATE',
+        currentTime,
+        videoStartTime
+      }, '*');
+    }
+  }, [graphsWindow, currentTime, videoStartTime]);
+
+  const handleViewGraphsButton = async () => {
+    const params = new URLSearchParams({
+      currentTime: currentTime.toString(),
+      videoStartTime: videoStartTime?.toString() || ''
+    });
+    const newWindow = window.open(`/GraphsPage?${params.toString()}`);
+    if (newWindow && files) {
+      setGraphsWindow(newWindow);
+      
+      // Convert files to transferable format
+      const filePromises = Array.from(files)
+        .filter(file => file.name.endsWith('.csv'))
+        .map(async file => ({
+          name: file.name,
+          type: file.type,
+          data: await file.arrayBuffer()
+        }));
+
+      const fileData = await Promise.all(filePromises);
+
+      // Pass the file data to the new window
+      newWindow.postMessage({
+        type: 'FILE_STATE',
+        files: fileData
+      }, '*');
+    }
   };
 
   const handleTimeUpdate = useCallback((time: number) => {

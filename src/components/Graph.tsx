@@ -2,6 +2,7 @@ import Papa from 'papaparse';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
+import { Box, Flex, Spinner, Text } from '@chakra-ui/react';
 
 ChartJS.register(
   CategoryScale,
@@ -184,30 +185,48 @@ export default function Graph({ xAxisName, yAxisName, currentTime, videoStartTim
   useEffect(() => {
     if (!rawData.length) return;
 
-    let dataToShow = rawData;
-
-    if (currentTime != null && videoStartTime != null) {
-      const currentUnixTime = videoStartTime + Math.floor(currentTime);
-      const timeWindow = {
-        start: currentUnixTime - TIME_WINDOW,
-        end: currentUnixTime + TIME_WINDOW
-      };
-
+    try {
+      let dataToShow = rawData;
       const timeColumn = Object.keys(rawData[0]).find(key => 
         key.toLowerCase().includes('time') || 
         key.toLowerCase().includes('date') ||
         key.toLowerCase().includes('timestamp')
-      ) || Object.keys(rawData[0])[0];
+      );
 
-      dataToShow = rawData.filter(row => {
-        const rowTime = Number(row[timeColumn]);
-        return rowTime >= timeWindow.start && rowTime <= timeWindow.end;
-      });
+      if (!timeColumn) {
+        setError('No time column found in CSV data');
+        return;
+      }
+
+      // Only filter by time window if both currentTime and videoStartTime are available
+      if (typeof currentTime === 'number' && typeof videoStartTime === 'number') {
+        const currentUnixTime = videoStartTime + Math.floor(currentTime);
+        const timeWindow = {
+          start: currentUnixTime - TIME_WINDOW,
+          end: currentUnixTime + TIME_WINDOW
+        };
+
+        // Validate time values and filter data
+        dataToShow = rawData.filter(row => {
+          const rowTime = Number(row[timeColumn]);
+          return !isNaN(rowTime) && rowTime >= timeWindow.start && rowTime <= timeWindow.end;
+        });
+
+        // Handle case where no data is available for the current time window
+        if (dataToShow.length === 0) {
+          console.warn(`No data available for time window ${timeWindow.start} to ${timeWindow.end}`);
+          // Explicitly clear the chart data to show the no data message
+          setChartData(null);
+          return;
+        }
+      }
+
+      const decimationFactor = getDecimationFactor(dataToShow.length);
+      const decimatedData = decimateData(dataToShow, decimationFactor);
+      updateChartData(decimatedData);
+    } catch (err) {
+      setError(`Error processing data: ${(err as Error).message}`);
     }
-
-    const decimationFactor = getDecimationFactor(dataToShow.length);
-    const decimatedData = decimateData(dataToShow, decimationFactor);
-    updateChartData(decimatedData);
   }, [rawData, currentTime, videoStartTime, decimateData, getDecimationFactor, updateChartData]);
 
   const options = {
@@ -296,42 +315,55 @@ export default function Graph({ xAxisName, yAxisName, currentTime, videoStartTim
   };
 
   return (
-    <div style={{ 
-      height: '400px',
-      width: '95%',
-      margin: '20px auto',
-      padding: '20px',
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
+    <Box
+      height="400px"
+      width="95%"
+      margin="20px auto"
+      padding="20px"
+      backgroundColor="white"
+      borderRadius="8px"
+      boxShadow="0 2px 4px rgba(0,0,0,0.1)"
+    >
       {error ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          height: '100%',
-          color: 'red',
-          textAlign: 'center',
-          padding: '20px'
-        }}>
-          {error}
-        </div>
-      ) : chartData ? (
+        <Flex
+          justifyContent="center"
+          alignItems="center"
+          height="100%"
+          color="red.500"
+          textAlign="center"
+          padding="20px"
+        >
+          <Text>{error}</Text>
+        </Flex>
+      ) : chartData && chartData.datasets[0]?.data.length > 0 ? (
         <Line 
           data={chartData} 
           options={options}
         />
       ) : (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          height: '100%'
-        }}>
-          Loading Data...
-        </div>
+        <Flex
+          justifyContent="center"
+          alignItems="center"
+          height="100%"
+          flexDirection="column"
+          gap={4}
+        >
+          {!rawData.length ? (
+            <>
+              <Spinner size="lg" color="blue.500" />
+              <Text color="gray.600">Loading data...</Text>
+            </>
+          ) : currentTime !== undefined && videoStartTime !== undefined ? (
+            <Text color="gray.600" fontSize="md" textAlign="center">
+              No sensor data available at {Math.floor(currentTime)}s
+            </Text>
+          ) : (
+            <Text color="gray.600" fontSize="md">
+              Waiting for time synchronization...
+            </Text>
+          )}
+        </Flex>
       )}
-    </div>
+    </Box>
   );
 }
