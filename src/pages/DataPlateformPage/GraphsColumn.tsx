@@ -1,5 +1,6 @@
 import Graph from "../../components/Graph";
-import { Box, VStack } from "@chakra-ui/react";
+import { Box, VStack, Button, Flex } from "@chakra-ui/react";
+import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { useFileContext } from '../../FileContext';
 import { useEffect, useState } from 'react';
 
@@ -35,13 +36,58 @@ export default function GraphsColumn({ currentTime, videoStartTime }: GraphsColu
     <VStack spacing={4} align="stretch" width="100%">
       {csvFiles.map((csv) => (
         <Box key={csv.name} width="100%">
-          <Graph 
-            xAxisName="Time" 
-            yAxisName={csv.name.replace('.csv', '')}
-            currentTime={currentTime}
-            videoStartTime={videoStartTime}
-            csvPath={csv.path}
-          />
+          <Flex direction="column" gap={2}>
+            <Flex justifyContent="flex-end">
+              <Button
+                size="sm"
+                leftIcon={<ExternalLinkIcon />}
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    currentTime: currentTime?.toString() || '0',
+                    videoStartTime: videoStartTime?.toString() || '',
+                    csvName: csv.name,
+                    csvPath: csv.path
+                  });
+                  const newWindow = window.open(`/SingleGraphPage?${params.toString()}`);
+                  if (newWindow) {
+                    // Send initial file data
+                    newWindow.postMessage({
+                      type: 'SINGLE_FILE_STATE',
+                      file: {
+                        name: csv.name,
+                        path: csv.path
+                      }
+                    }, '*');
+                    
+                    // Setup time sync
+                    const interval = setInterval(() => {
+                      if (currentTime !== undefined && videoStartTime !== undefined) {
+                        newWindow.postMessage({
+                          type: 'TIME_UPDATE',
+                          currentTime,
+                          videoStartTime
+                        }, '*');
+                      }
+                    }, 100);
+
+                    // Cleanup interval when window closes
+                    newWindow.addEventListener('unload', () => {
+                      clearInterval(interval);
+                    });
+                  }
+                }}
+              >
+                View Graph
+              </Button>
+            </Flex>
+            <Graph 
+              xAxisName="Time" 
+              yAxisName={csv.name.replace('.csv', '')}
+              currentTime={currentTime}
+              videoStartTime={videoStartTime}
+              csvPath={csv.path}
+            />
+          </Flex>
         </Box>
       ))}
     </VStack>

@@ -2,6 +2,7 @@ import './App.css';
 import HomePage from './pages/HomePage';
 import Header from './components/Header';
 import GraphsPage from './pages/GraphsPage';
+import SingleGraphPage from './pages/SingleGraphPage';
 import SettingPage from './pages/SettingPage';
 import VideoPage from './pages/VideoPage';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -62,6 +63,7 @@ function App() {
                   }
                 />
                 <Route path='/GraphsPage' element={<GraphsPage/>}/>
+                <Route path='/SingleGraphPage' element={<SingleGraphPage/>}/>
                 <Route path='/VideoPage' element={<VideoPage/>}/>
               </Routes>
             </>

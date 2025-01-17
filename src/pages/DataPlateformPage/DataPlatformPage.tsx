@@ -1,7 +1,6 @@
 import VideoColumn from './VideoColumn';
 import ButtonsColumn from './ButtonsColumn';
-import { ExternalLinkIcon } from '@chakra-ui/icons';
-import { Button, Box, Container, Flex } from '@chakra-ui/react';
+import { Box, Container, Flex } from '@chakra-ui/react';
 import { useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Observation } from '../../components/CreateObservationModal';
@@ -40,46 +39,7 @@ export default function DataPlatformPage() {
     }
   }, [files]);
 
-  const [graphsWindow, setGraphsWindow] = useState<Window | null>(null);
 
-  // Send time updates to graphs window
-  useEffect(() => {
-    if (graphsWindow && currentTime !== undefined && videoStartTime !== undefined) {
-      graphsWindow.postMessage({
-        type: 'TIME_UPDATE',
-        currentTime,
-        videoStartTime
-      }, '*');
-    }
-  }, [graphsWindow, currentTime, videoStartTime]);
-
-  const handleViewGraphsButton = async () => {
-    const params = new URLSearchParams({
-      currentTime: currentTime.toString(),
-      videoStartTime: videoStartTime?.toString() || ''
-    });
-    const newWindow = window.open(`/GraphsPage?${params.toString()}`);
-    if (newWindow && files) {
-      setGraphsWindow(newWindow);
-      
-      // Convert files to transferable format
-      const filePromises = Array.from(files)
-        .filter(file => file.name.endsWith('.csv'))
-        .map(async file => ({
-          name: file.name,
-          type: file.type,
-          data: await file.arrayBuffer()
-        }));
-
-      const fileData = await Promise.all(filePromises);
-
-      // Pass the file data to the new window
-      newWindow.postMessage({
-        type: 'FILE_STATE',
-        files: fileData
-      }, '*');
-    }
-  };
 
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time);
@@ -162,9 +122,6 @@ export default function DataPlatformPage() {
       </Flex>
 
       <Box m={2}>
-        <Flex justifyContent="flex-end">
-          <Button size={"md"} leftIcon={<ExternalLinkIcon/>} onClick={handleViewGraphsButton}>View Graphs</Button>
-        </Flex>
         <GraphsColumn
           currentTime={currentTime}
           videoStartTime={videoStartTime}
