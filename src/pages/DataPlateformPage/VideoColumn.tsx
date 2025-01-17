@@ -18,10 +18,10 @@ export interface VideoColumnProps {
 
 const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVideo, isPlaying }) => {
   const [show, setShow] = useState(true);
-  const [mute, setMute] = useState(false);
   const { files } = useFileContext();
   const [mp4Files, setMp4Files] = useState<File[]>([]);
   const videoRefs = useRef<{ [key: number]: React.RefObject<HTMLVideoElement> }>({});
+  const [muteStates, setMuteStates] = useState<{ [key: number]: boolean }>({});
   const [expandedWindows, setExpandedWindows] = useState<{ [key: number]: Window | null }>({});
   const messageHandlers = useRef<{ [key: number]: (event: MessageEvent) => void }>({});
   const syncTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({});
@@ -52,7 +52,8 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
           currentTime: ref.current.currentTime,
           duration: ref.current.duration,
           isPlaying: !ref.current.paused,
-          videoRef: ref
+          videoRef: ref,
+          muted: muteStates[parseInt(index)] || false
         });
       }
     });
@@ -100,7 +101,23 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
   }, [isPlaying, expandedWindows]);
 
   const handleToggle = () => setShow(!show);
-  const handleMute = () => setMute(!mute);
+  const handleMute = (index: number) => {
+    setMuteStates(prev => {
+      const newState = { ...prev, [index]: !prev[index] };
+      // Update video registration with new mute state
+      const video = videoRefs.current[index]?.current;
+      if (video) {
+        registerVideo({
+          currentTime: video.currentTime,
+          duration: video.duration,
+          isPlaying: !video.paused,
+          videoRef: videoRefs.current[index],
+          muted: newState[index]
+        });
+      }
+      return newState;
+    });
+  };
 
   const handleExpandVideoButton = (file: File, index: number) => {
     const existingWindow = expandedWindows[index];
@@ -269,12 +286,13 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
   const handleTimeUpdate = (index: number) => {
     const video = videoRefs.current[index]?.current;
     if (video) {
-      registerVideo({
-        currentTime: video.currentTime,
-        duration: video.duration,
-        isPlaying: !video.paused,
-        videoRef: videoRefs.current[index]
-      });
+        registerVideo({
+          currentTime: video.currentTime,
+          duration: video.duration,
+          isPlaying: !video.paused,
+          videoRef: videoRefs.current[index],
+          muted: muteStates[index] || false
+        });
 
       if (syncTimeoutRef.current[index]) {
         clearTimeout(syncTimeoutRef.current[index]);
@@ -323,7 +341,7 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                     ref={videoRefs.current[index]}
                     controls={false}
                     width="100%"
-                    muted={mute}
+                    muted={muteStates[index] || false}
                     onTimeUpdate={() => handleTimeUpdate(index)}
                     onSeeking={() => handleTimeUpdate(index)}
                     onSeeked={() => handleTimeUpdate(index)}
@@ -341,10 +359,10 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                   <Button 
                     size="xs" 
                     mr={2} 
-                    onClick={handleMute}
-                    leftIcon={mute ? <BsVolumeMuteFill /> : <BsVolumeUpFill />}
+                    onClick={() => handleMute(index)}
+                    leftIcon={muteStates[index] ? <BsVolumeMuteFill /> : <BsVolumeUpFill />}
                   >
-                    {mute ? 'Unmute' : 'Mute'}
+                    {muteStates[index] ? 'Unmute' : 'Mute'}
                   </Button>
                   <Button 
                     size="xs" 

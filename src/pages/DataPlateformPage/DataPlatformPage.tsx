@@ -12,6 +12,7 @@ export interface VideoControl {
   duration: number;
   isPlaying: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
+  muted: boolean;
 }
 
 export default function DataPlatformPage() {
@@ -89,9 +90,9 @@ export default function DataPlatformPage() {
       // Update or add the control
       const exists = prev.find(c => c.videoRef === control.videoRef);
       if (exists) {
-        return prev.map(c => c.videoRef === control.videoRef ? control : c);
+        return prev.map(c => c.videoRef === control.videoRef ? { ...control, muted: control.muted ?? exists.muted } : c);
       }
-      return [...prev, control];
+      return [...prev, { ...control, muted: control.muted ?? false }];
     });
     // Update current time when a new video registers
     setCurrentTime(control.currentTime);
