@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Observation } from '../../components/CreateObservationModal';
 import GraphsColumn from './GraphsColumn';
 import { useFileContext } from '../../FileContext';
+import AudioPlayer from '../../components/AudioPlayer';
 
 export interface VideoControl {
   currentTime: number;
@@ -15,11 +16,18 @@ export interface VideoControl {
   muted: boolean;
 }
 
+interface AudioFile {
+  name: string;
+  file: File;
+  startTimestamp: number;
+}
+
 export default function DataPlatformPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const initialObservations = (location.state?.observations as Observation[]) || [];
   const { files } = useFileContext();
+  const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
 
   // Handle browser refresh
   useEffect(() => {
@@ -64,9 +72,10 @@ export default function DataPlatformPage() {
   const [videoStartTime, setVideoStartTime] = useState<number | undefined>();
   const maxDuration = Math.max(...videoControls.map(c => c.duration || 0), 0);
 
-  // Extract video start time from filename
+  // Extract video start time and process WAV files
   useEffect(() => {
     if (files) {
+      // Handle video start time
       const videoFile = Array.from(files).find(file => file.name.endsWith('.mp4'));
       if (videoFile) {
         const match = videoFile.name.match(/^(\d+)/);
@@ -75,6 +84,19 @@ export default function DataPlatformPage() {
           setVideoStartTime(startTime);
         }
       }
+
+      // Process WAV files
+      const wavFiles = Array.from(files).filter(file => file.name.endsWith('.wav'));
+      const processedAudioFiles = wavFiles.map(file => {
+        const match = file.name.match(/^(\d+)/);
+        const startTimestamp = match ? parseInt(match[1], 10) : 0;
+        return {
+          name: file.name,
+          file: file,
+          startTimestamp: startTimestamp
+        };
+      });
+      setAudioFiles(processedAudioFiles);
     }
   }, [files]);
 
@@ -159,6 +181,17 @@ export default function DataPlatformPage() {
           initialObservations={initialObservations}
         />
       </Flex>
+
+      {audioFiles.length > 0 && videoStartTime !== undefined && (
+        <Box mb={4} borderWidth="1px" borderRadius="lg">
+          <AudioPlayer
+            audioFiles={audioFiles}
+            videoStartTimestamp={videoStartTime}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+          />
+        </Box>
+      )}
 
       <Box m={2}>
         <GraphsColumn
