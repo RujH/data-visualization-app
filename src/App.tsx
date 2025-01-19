@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   
   // Check if we have state passed to this route
   if (!location.state) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/data-visualization-app" replace />;
   }
 
   return children;
@@ -33,7 +33,7 @@ const RefreshProtection = ({ children }: { children: JSX.Element }) => {
     
     // If this is a refresh and not on homepage, redirect to home
     if (isPageRefresh && location.pathname !== '/') {
-      window.location.href = '/';
+      window.location.href = '/data-visualization-app';
     }
     
     // Set the flag to indicate the app has been loaded
@@ -47,7 +47,7 @@ function App() {
   return (
     <ChakraProvider>
       <FileProvider>
-        <Router>
+        <Router basename="/data-visualization-app">
           <RefreshProtection>
             <>
               <Header/>
