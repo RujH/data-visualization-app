@@ -495,6 +495,9 @@ export default function ButtonsColumn({
                                             width="auto"
                                             minW="120px"
                                             maxW="200px"
+                                            height="auto"
+                                            whiteSpace="normal"
+                                            py={2}
                                         >
                                             {observation.name}
                                             <Badge ml={2} colorScheme={observation.type === 'Duration' ? "purple" : "green"}>
