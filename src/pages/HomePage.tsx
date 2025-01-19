@@ -39,10 +39,11 @@ export default function HomePage() {
       spacing={4}           
       align="center"       
       justify="center"     
-      h="100vh"             
+      h="90vh"             
       p={4}
+      overflow="hidden"
     >
-      <div className='backgroundShap'>
+      <div className='backgroundShap' style={{ height: '100vh', overflow: 'hidden' }}>
         <Box
           w="100%"
           maxW="500px"
