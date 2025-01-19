@@ -1,46 +1,112 @@
-# Getting Started with Create React App
+# Data Visualization App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React TypeScript application for visualizing and analyzing session data with synchronized video and audio playback capabilities.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Session Data Upload**: Upload entire folders containing session data through an intuitive interface
+- **Video Playback**: Support for MP4 video playback with synchronized timestamps
+- **Multi-Audio Support**: 
+  - Handle multiple audio sources simultaneously
+  - Individual volume controls for each audio source
+  - Mute/unmute controls per audio track
+  - Automatic synchronization with video timestamps
+- **Modern UI**: Built with Chakra UI for a clean, responsive interface
 
-### `npm start`
+## Getting Started
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Prerequisites
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Node.js (v14 or higher)
+- npm or yarn
 
-### `npm test`
+### Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository:
+```bash
+git clone [repository-url]
+```
 
-### `npm run build`
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Start the development server:
+```bash
+npm start
+# or
+yarn start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Usage
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. **Upload Session Data**
+   - Click on the folder upload button on the home page
+   - Select a folder containing your session data
+   - The app will automatically process the files
 
-### `npm run eject`
+### Session Data Folder Structure
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Your session data folder should contain the following files:
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+session-folder/
+├── Videos/[timestamp]_video.mp4    # Main video file with timestamp prefix
+├── Audios/[timestamp]_audio1.wav   # Audio file with timestamp prefix
+├── Audios/[timestamp]_audio2.wav   # Additional audio files (optional)
+└── Sensors/data.csv                 # Time-series data for visualization
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+**File Requirements:**
+- Video files (.mp4):
+  - Must have a timestamp prefix (e.g., "1234567890_video.mp4")
+  - Used as the main video content
+- Audio files (.wav):
+  - Must have a timestamp prefix (e.g., "1234567890_audio.wav")
+  - Multiple audio files supported
+  - Timestamps used for synchronization with video
+- CSV files:
+  - Contains time-series data for visualization
+  - Data points sync with video timestamps
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+2. **Video Playback**
+   - Navigate to the video page using the interface
+   - Video playback controls are available at the bottom of the player
 
-## Learn More
+3. **Audio Management**
+   - External audio sources appear in a list next to the video
+   - Use checkboxes to mute/unmute individual audio tracks
+   - Adjust volume using the slider controls
+   - Audio automatically syncs with video timestamps
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Technologies Used
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- React
+- TypeScript
+- Chakra UI
+- React Router
+- File API
+- Web Audio API
+
+## Project Structure
+
+```
+src/
+├── components/
+│   └── AudioPlayer.tsx    # Handles multi-audio playback
+├── pages/
+│   ├── HomePage.tsx       # Main upload interface
+│   └── VideoPage.tsx      # Video playback with audio sync
+└── FileContext.tsx        # Global file state management
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
