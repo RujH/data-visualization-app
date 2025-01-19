@@ -59,7 +59,7 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DataPlatformPage/>
-                    </ProtectedRoute>
+                    </ProtectedRoute>  
                   }
                 />
                 <Route path='/GraphsPage' element={<GraphsPage/>}/>

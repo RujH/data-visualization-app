@@ -19,7 +19,6 @@ export default function HomePage() {
   const handleFolderSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      console.log("homepage",files)
       setFiles(files)
       setInputError(false);
     }

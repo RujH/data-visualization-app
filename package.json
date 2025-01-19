@@ -1,7 +1,8 @@
 {
   "name": "data-visualization-app",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "homepage": "https://rujh.github.io/data-visualization-app",
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.2",
