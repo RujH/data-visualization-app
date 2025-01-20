@@ -4,23 +4,10 @@
     <meta charset="utf-8">
     <title>Data Visualization App - Page Not Found</title>
     <script>
-      // Get the path and search parameters
-      let path = window.location.pathname;
-      const search = window.location.search;
-      
-      // Remove any existing basename to prevent duplication
-      path = path.replace('/data-visualization-app', '');
-      
-      // Store the cleaned path
-      sessionStorage.setItem('redirect', path + search);
-      
-      // If it's SingleGraphPage, preserve the path but ensure single basename
-      if (path.includes('SingleGraphPage')) {
-        window.location.href = '/data-visualization-app' + path + search;
-      } else {
-        // Otherwise redirect to root
-        window.location.href = '/data-visualization-app/';
-      }
+      // Store the current path in sessionStorage
+      sessionStorage.setItem('redirect', window.location.pathname + window.location.search);
+      // Redirect to the root index.html
+      window.location.href = '/data-visualization-app/';
     </script>
   </head>
   <body>
