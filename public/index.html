@@ -18,8 +18,7 @@
           // Remove the redirect flag
           sessionStorage.removeItem('redirect');
           // Update the URL using history API
-          var baseUrl = window.location.origin + '/data-visualization-app';
-          var newUrl = baseUrl + redirect;
+          var newUrl = '/data-visualization-app';
           window.history.replaceState(null, null, newUrl);
         }
       })();
