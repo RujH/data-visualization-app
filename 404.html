@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <title>Data Visualization App - Page Not Found</title>
     <script>
-      // Store the current path in sessionStorage
-      sessionStorage.setItem('redirect', window.location.pathname + window.location.search);
+      // Store both redirect flag and path
+      sessionStorage.setItem('redirect', 'true');
+      sessionStorage.setItem('redirectPath', window.location.pathname.replace('/data-visualization-app', '') + window.location.search);
       // Redirect to the root index.html
-      // window.location.href = '/data-visualization-app/';
+      window.location.href = '/data-visualization-app/';
     </script>
   </head>
   <body>
