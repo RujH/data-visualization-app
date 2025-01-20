@@ -135,7 +135,7 @@ export default function GraphsColumn({ currentTime, videoStartTime }: GraphsColu
                     csvName: csv.name,
                     csvPath: csv.path
                   });
-                  const newWindow = window.open(`/SingleGraphPage?${params.toString()}`);
+                  const newWindow = window.open(`/data-visualization-app/SingleGraphPage?${params.toString()}`);
                   if (newWindow) {
                     try {
                       // Send initial file data
