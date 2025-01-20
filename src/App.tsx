@@ -31,8 +31,8 @@ const RefreshProtection = ({ children }: { children: JSX.Element }) => {
     // Check if this is a page refresh
     const isPageRefresh = !sessionStorage.getItem('app_loaded');
     
-    // If this is a refresh and not on homepage, redirect to home
-    if (isPageRefresh && location.pathname !== '/') {
+    // If this is a refresh, always redirect to home
+    if (isPageRefresh) {
       window.location.href = '/data-visualization-app';
     }
     
