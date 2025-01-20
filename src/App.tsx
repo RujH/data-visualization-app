@@ -7,7 +7,7 @@ import SettingPage from './pages/SettingPage';
 import VideoPage from './pages/VideoPage';
 import { ChakraProvider } from '@chakra-ui/react';
 import DataPlatformPage from './pages/DataPlateformPage/DataPlatformPage';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { FileProvider } from './FileContext';
 import { useEffect } from 'react';
 
@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   
   // Check if we have state passed to this route
   if (!location.state) {
-    return <Navigate to="/data-visualization-app" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -38,7 +38,7 @@ const RefreshProtection = ({ children }: { children: JSX.Element }) => {
           sessionStorage.setItem('app_loaded', 'true');
           // Only redirect if we're not already at the home page
           if (location.pathname !== '/') {
-            window.location.href = '/data-visualization-app';
+            window.location.hash = '#/';
           }
         } catch (err) {
           // If we can't set the flag, just continue without redirect
@@ -58,7 +58,7 @@ function App() {
   return (
     <ChakraProvider>
       <FileProvider>
-        <Router basename="/data-visualization-app">
+        <Router>
           <RefreshProtection>
             <>
               <Header/>

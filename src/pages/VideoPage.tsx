@@ -4,7 +4,6 @@ import {
   Flex 
 } from '@chakra-ui/react';
 
-
 export default function VideoPage() {
   const location = useLocation();
   const { file, index } = location.state || {}; // Extract `file` and `index`
@@ -28,4 +27,3 @@ export default function VideoPage() {
     
   );
 };
-
