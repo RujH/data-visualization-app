@@ -28,16 +28,27 @@ const RefreshProtection = ({ children }: { children: JSX.Element }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if this is a page refresh
-    const isPageRefresh = !sessionStorage.getItem('app_loaded');
-    
-    // If this is a refresh, always redirect to home
-    if (isPageRefresh) {
-      window.location.href = '/data-visualization-app';
+    try {
+      // Try to access sessionStorage
+      const hasLoaded = sessionStorage.getItem('app_loaded');
+      
+      // Only redirect if we can confirm this is a fresh page load
+      if (!hasLoaded) {
+        try {
+          sessionStorage.setItem('app_loaded', 'true');
+          // Only redirect if we're not already at the home page
+          if (location.pathname !== '/') {
+            window.location.href = '/data-visualization-app';
+          }
+        } catch (err) {
+          // If we can't set the flag, just continue without redirect
+          console.warn('Storage access denied, continuing without refresh protection');
+        }
+      }
+    } catch (err) {
+      // If we can't access storage at all, just render the children
+      console.warn('Storage access denied, continuing without refresh protection');
     }
-    
-    // Set the flag to indicate the app has been loaded
-    sessionStorage.setItem('app_loaded', 'true');
   }, [location]);
 
   return children;
