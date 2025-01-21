@@ -155,8 +155,9 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
               </video>
               <div class="controls">
                 <button onclick="window.postMessage({type: 'skip', seconds: -10}, '*')">-10s</button>
-                <button onclick="window.postMessage({type: 'togglePlay'}, '*')">${isPlaying ? 'Pause' : 'Play'}</button>
+                <button id="playPauseBtn" onclick="window.postMessage({type: 'togglePlay'}, '*')">${isPlaying ? 'Pause' : 'Play'}</button>
                 <button onclick="window.postMessage({type: 'skip', seconds: 10}, '*')">+10s</button>
+                <button id="muteBtn" onclick="window.postMessage({type: 'toggleMute'}, '*')">${muteStates[index] ? 'Unmute' : 'Mute'}</button>
               </div>
             </div>
             <script>
@@ -178,9 +179,27 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                 }
               }
 
+              video.muted = ${muteStates[index]};
+              
               video.addEventListener('timeupdate', notifyTimeUpdate);
               video.addEventListener('seeking', notifyTimeUpdate);
               video.addEventListener('seeked', notifyTimeUpdate);
+              
+              // Update play/pause button text
+              function updatePlayPauseButton(isPlaying) {
+                const playPauseBtn = document.getElementById('playPauseBtn');
+                if (playPauseBtn) {
+                  playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
+                }
+              }
+              
+              // Update mute button text
+              function updateMuteButton(isMuted) {
+                const muteBtn = document.getElementById('muteBtn');
+                if (muteBtn) {
+                  muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+                }
+              }
 
               video.addEventListener('play', () => {
                 window.opener.postMessage({
@@ -204,11 +223,36 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                 if (event.source === window) {
                   switch (event.data.type) {
                     case 'togglePlay':
-                      if (video.paused) video.play();
-                      else video.pause();
+                      if (video.paused) {
+                        video.play();
+                        window.opener.postMessage({
+                          type: 'playAll',
+                          index: ${index}
+                        }, '*');
+                      } else {
+                        video.pause();
+                        window.opener.postMessage({
+                          type: 'pauseAll',
+                          index: ${index}
+                        }, '*');
+                      }
                       break;
                     case 'skip':
                       video.currentTime += event.data.seconds;
+                      window.opener.postMessage({
+                        type: 'skipAll',
+                        seconds: event.data.seconds,
+                        index: ${index}
+                      }, '*');
+                      break;
+                    case 'toggleMute':
+                      video.muted = !video.muted;
+                      updateMuteButton(video.muted);
+                      window.opener.postMessage({
+                        type: 'toggleMute',
+                        index: ${index},
+                        muted: video.muted
+                      }, '*');
                       break;
                   }
                 } else if (event.data.type === 'sync') {
@@ -221,6 +265,11 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
                     if (event.data.isPlaying) video.play();
                     else video.pause();
                   }
+                  if (video.muted !== event.data.muted) {
+                    video.muted = event.data.muted;
+                    updateMuteButton(event.data.muted);
+                  }
+                  updatePlayPauseButton(event.data.isPlaying);
                   setTimeout(() => { syncInProgress = false; }, 50);
                 }
               });
@@ -251,25 +300,56 @@ const VideoColumn: React.FC<VideoColumnProps> = ({ registerVideo, unregisterVide
 
           switch (event.data.type) {
             case 'timeUpdate':
-              if (Math.abs(mainVideo.currentTime - event.data.time) > 0.1) {
-                mainVideo.currentTime = event.data.time;
-              }
+              // Sync all videos to the same time
+              Object.entries(videoRefs.current).forEach(([vidIndex, ref]) => {
+                const video = ref.current;
+                if (video && parseInt(vidIndex) !== event.data.index) {
+                  if (Math.abs(video.currentTime - event.data.time) > 0.1) {
+                    video.currentTime = event.data.time;
+                  }
+                }
+              });
               break;
-            case 'playStateChange':
-              if (event.data.isPlaying && mainVideo.paused) {
-                mainVideo.play().catch(console.error);
-              } else if (!event.data.isPlaying && !mainVideo.paused) {
-                mainVideo.pause();
-              }
-              if (Math.abs(mainVideo.currentTime - event.data.time) > 0.1) {
-                mainVideo.currentTime = event.data.time;
+            case 'playAll':
+              Object.entries(videoRefs.current).forEach(([vidIndex, ref]) => {
+                const video = ref.current;
+                if (video && parseInt(vidIndex) !== event.data.index && video.paused) {
+                  video.play().catch(console.error);
+                }
+              });
+              break;
+            case 'pauseAll':
+              Object.entries(videoRefs.current).forEach(([vidIndex, ref]) => {
+                const video = ref.current;
+                if (video && parseInt(vidIndex) !== event.data.index && !video.paused) {
+                  video.pause();
+                }
+              });
+              break;
+            case 'skipAll':
+              Object.entries(videoRefs.current).forEach(([vidIndex, ref]) => {
+                const video = ref.current;
+                if (video && parseInt(vidIndex) !== event.data.index) {
+                  video.currentTime += event.data.seconds;
+                }
+              });
+              break;
+            case 'toggleMute':
+              if (event.data.muted !== undefined) {
+                setMuteStates(prev => ({
+                  ...prev,
+                  [event.data.index]: event.data.muted
+                }));
+              } else {
+                handleMute(event.data.index);
               }
               break;
             case 'requestSync':
               newWindow.postMessage({
                 type: 'sync',
                 time: mainVideo.currentTime,
-                isPlaying: !mainVideo.paused
+                isPlaying: !mainVideo.paused,
+                muted: muteStates[index] || false
               }, '*');
               break;
           }
