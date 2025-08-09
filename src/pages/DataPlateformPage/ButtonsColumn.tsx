@@ -115,6 +115,10 @@ export default function ButtonsColumn({
         return hours * 3600 + minutes * 60 + seconds;
     };
 
+    const normalizeName = (name: string): string => {
+        return name.trim().replace(/\s+/g, ' ');
+    };
+
     const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -134,24 +138,29 @@ export default function ButtonsColumn({
                 return;
             }
 
-            const existingObservations = new Map(observations.map(obs => [obs.id, obs]));
-            const newObservations = new Set<ImportedObservation>();
+            // Build a set of existing keys based on name+type to avoid duplicate buttons
+            const existingKeys = new Set(
+                observations.map(obs => `${normalizeName(obs.name)}|${obs.type}`)
+            );
+            // Collect new observations keyed by name+type within this import
+            const newObservationsByKey = new Map<string, ImportedObservation>();
             const importedLogs: ObservationLog[] = [];
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',');
                 if (values.length < 5) continue;
 
-                const observationId = values[0];
-                const observationName = values[1].replace(/^"|"$/g, '');
+                const observationName = values[1].replace(/^"|"$/g, '').trim();
                 const observationType = values[2] as 'Point' | 'Duration';
                 const timestamp = new Date(values[3]).getTime();
                 const startTime = parseTimeString(values[4]);
                 const endTime = values[5] ? parseTimeString(values[5]) : undefined;
 
-                if (!existingObservations.has(observationId)) {
-                    newObservations.add({
-                        id: observationId,
+                // Use a canonical key for both buttons and logs to ensure consistency
+                const key = `${normalizeName(observationName)}|${observationType}`;
+                if (!existingKeys.has(key) && !newObservationsByKey.has(key)) {
+                    newObservationsByKey.set(key, {
+                        id: key,
                         name: observationName,
                         type: observationType,
                         description: `Imported ${observationType} observation`
@@ -160,7 +169,7 @@ export default function ButtonsColumn({
 
                 importedLogs.push({
                     id: `${Date.now()}-${Math.random()}`,
-                    observationId,
+                    observationId: key,
                     observationName,
                     observationType,
                     timestamp,
@@ -170,7 +179,7 @@ export default function ButtonsColumn({
                 });
             }
 
-            const newObservationsArray: Observation[] = Array.from(newObservations).map(obs => ({
+            const newObservationsArray: Observation[] = Array.from(newObservationsByKey.values()).map(obs => ({
                 id: obs.id,
                 name: obs.name,
                 type: obs.type,
@@ -181,7 +190,7 @@ export default function ButtonsColumn({
 
             toast({
                 title: 'Import Successful',
-                description: `Imported ${importedLogs.length} observations and created ${newObservations.size} new buttons`,
+                description: `Imported ${importedLogs.length} observations and created ${newObservationsByKey.size} new buttons`,
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
